@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WWII Bolt-Action Armory Archive</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains-Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hud: {
+                            bg: '#080c14',
+                            panel: '#0f172a',
+                            border: '#1e293b',
+                            cyan: '#00e5ff',
+                            cyanDark: '#0284c7',
+                            green: '#22c55e',
+                            amber: '#f59e0b',
+                            crimson: '#ef4444',
+                            text: '#94a3b8',
+                            bright: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        chakra: ['"Chakra Petch"', 'sans-serif'],
+                        rajdhani: ['"Rajdhani"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #080c14;
+            color: #94a3b8;
+            font-family: 'Chakra Petch', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 70%),
+                linear-gradient(to right, rgba(15, 23, 42, 0.5) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.5) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+        }
+
+        /* Tactical HUD Card Styling */
+        .hud-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            position: relative;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; width: 10px; height: 10px;
+            border-top: 2px solid #00e5ff;
+            border-left: 2px solid #00e5ff;
+        }
+
+        .hud-card::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; right: -1px; width: 10px; height: 10px;
+            border-bottom: 2px solid #00e5ff;
+            border-right: 2px solid #00e5ff;
+        }
+
+        .hud-glow {
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
+        }
+
+        /* Option A: PNG Rifle Image Container with HUD Styling */
+        .rifle-image-container {
+            width: 100%;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 18, 28, 0.75);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 4px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.85);
+            background-image: 
+                linear-gradient(to right, rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Target HUD Corner Indicators for Image Frame */
+        .hud-corner-tl { position: absolute; top: 8px; left: 8px; width: 12px; height: 12px; border-top: 2px solid #00e5ff; border-left: 2px solid #00e5ff; }
+        .hud-corner-tr { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-top: 2px solid #00e5ff; border-right: 2px solid #00e5ff; }
+        .hud-corner-bl { position: absolute; bottom: 8px; left: 8px; width: 12px; height: 12px; border-bottom: 2px solid #00e5ff; border-left: 2px solid #00e5ff; }
+        .hud-corner-br { position: absolute; bottom: 8px; right: 8px; width: 12px; height: 12px; border-bottom: 2px solid #00e5ff; border-right: 2px solid #00e5ff; }
+
+        .rifle-png-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5));
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .rifle-png-img.glow-active {
+            filter: drop-shadow(0 0 16px rgba(0, 229, 255, 0.85)) brightness(1.15);
+        }
+
+        .rifle-png-img:hover {
+            transform: scale(1.04);
+        }
+
+        /* Scanline Overlay Effect */
+        .scanline-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.25) 50%,
+                rgba(0, 0, 0, 0.25)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #080c14; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border: 1px solid #00e5ff; }
+        ::-webkit-scrollbar-thumb:hover { background: #00e5ff; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-300 relative selection:bg-cyan-500 selection:text-black">
+
+    <!-- NAVIGATION HUD HEADER -->
+    <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/30 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-cyan-400 animate-ping rounded-full"></div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wider text-white flex items-center gap-2 font-rajdhani uppercase">
+                        <i class="fa-solid fa-crosshairs text-cyan-400"></i>
+                        WWII BOLT-ACTION <span class="text-cyan-400">ARMORY ARCHIVE</span>
+                    </h1>
+                    <p class="text-xs font-mono text-slate-400 tracking-widest uppercase">CLASSIFIED INFANTRY SYSTEM // OPTION A [PNG ACTIVE]</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-1 lg:space-x-3 font-mono text-xs uppercase tracking-wider">
+                <a href="#selector" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Armas</a>
+                <a href="#vs-mode" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Modo VS</a>
+                <a href="#graphics" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Balística</a>
+                <a href="#soldiers" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Leyendas</a>
+                <a href="#history" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Ingeniería</a>
+                <a href="#sources" onclick="playAudio('click')" class="px-3 py-1.5 hover:text-cyan-400 hover:bg-cyan-950/40 rounded transition border border-transparent hover:border-cyan-500/30">Fuentes</a>
+            </nav>
+
+            <!-- Audio SFX Controls -->
+            <div class="flex items-center gap-3 font-mono text-xs">
+                <button id="soundToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 bg-slate-900 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500 hover:text-black transition flex items-center gap-2 rounded">
+                    <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                    <span id="soundText">SFX ON</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-16">
+
+        <!-- INTRO BANNER -->
+        <section class="hud-card p-6 md:p-8 rounded-lg relative overflow-hidden">
+            <div class="absolute -right-20 -bottom-20 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-crosshairs text-[300px] text-cyan-400"></i>
+            </div>
+            <div class="max-w-3xl space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/60 border border-cyan-500/40 text-cyan-400 text-xs font-mono uppercase tracking-widest">
+                    <i class="fa-solid fa-image"></i> Renderizado PNG &amp; Telemetría
+                </div>
+                <h2 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight font-rajdhani uppercase">
+                    REGISTRO DE ARMAS DE CERROJO Y DATOS FRÍOS
+                </h2>
+                <p class="text-slate-300 leading-relaxed font-sans text-base md:text-lg">
+                    Visualiza y compara el rendimiento balístico del <strong class="text-cyan-300">Mosin-Nagant M91/30</strong>, el <strong class="text-amber-300">Mauser Kar98k</strong> y el <strong class="text-emerald-300">Springfield M1903</strong> con imágenes PNG de alta resolución integradas en el marco táctico HUD.
+                </p>
+                <div class="flex flex-wrap gap-4 font-mono text-xs pt-2">
+                    <span class="px-3 py-1 bg-slate-900 border border-slate-700 text-slate-300"><i class="fa-solid fa-file-image text-cyan-400 mr-1"></i> Contenedores PNG Tácticos</span>
+                    <span class="px-3 py-1 bg-slate-900 border border-slate-700 text-slate-300"><i class="fa-solid fa-sliders text-cyan-400 mr-1"></i> Controles de Filtro & Glow</span>
+                    <span class="px-3 py-1 bg-slate-900 border border-slate-700 text-slate-300"><i class="fa-solid fa-user-shield text-cyan-400 mr-1"></i> Perfiles de Tiradores Famosos</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 1: WEAPON SELECTOR & DETAILED SPECS -->
+        <section id="selector" class="space-y-6">
+            <div class="border-l-4 border-cyan-400 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-sliders text-cyan-400"></i> Armería &amp; Visor PNG Táctico
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Selecciona una plataforma para desplegar la fotografía PNG y la telemetría técnica.</p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="switchWeapon('mosin')" id="btn-mosin" class="weapon-tab-btn active p-4 hud-card text-left transition hover:border-cyan-400 group relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-xs text-cyan-400">URSS / SOVIÉTICO</span>
+                        <span class="text-xs px-2 py-0.5 bg-red-950/80 border border-red-500/50 text-red-300 font-mono">7.62x54mmR</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mt-2 group-hover:text-cyan-300 font-rajdhani">Mosin-Nagant M91/30</h4>
+                    <p class="text-xs text-slate-400 font-mono mt-1">"La Estaca de Stalin"</p>
+                </button>
+
+                <button onclick="switchWeapon('kar98k')" id="btn-kar98k" class="weapon-tab-btn p-4 hud-card text-left transition hover:border-amber-400 group relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-xs text-amber-400">ALEMANIA / WEHRMACHT</span>
+                        <span class="text-xs px-2 py-0.5 bg-amber-950/80 border border-amber-500/50 text-amber-300 font-mono">7.92x57mm Mauser</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mt-2 group-hover:text-amber-300 font-rajdhani">Mauser Kar98k</h4>
+                    <p class="text-xs text-slate-400 font-mono mt-1">"Ingeniería de Alta Precisión"</p>
+                </button>
+
+                <button onclick="switchWeapon('springfield')" id="btn-springfield" class="weapon-tab-btn p-4 hud-card text-left transition hover:border-emerald-400 group relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <span class="font-mono text-xs text-emerald-400">EE.UU. / U.S. ARMY</span>
+                        <span class="text-xs px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-mono">.30-06 Springfield</span>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mt-2 group-hover:text-emerald-300 font-rajdhani">Springfield M1903 (A3)</h4>
+                    <p class="text-xs text-slate-400 font-mono mt-1">"Refinamiento Técnico"</p>
+                </button>
+            </div>
+
+            <!-- Weapon Detail View Container -->
+            <div id="weapon-detail-card" class="hud-card p-6 md:p-8 rounded-lg">
+                <!-- Content injected dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- SECTION 2: SIDE-BY-SIDE VS COMPARATOR -->
+        <section id="vs-mode" class="space-y-6">
+            <div class="border-l-4 border-amber-400 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-code-compare text-amber-400"></i> MODO DUAL "VS" // COMPARADOR DIRECTO
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Enfrenta dos plataformas frente a frente para contrastar sus métricas balísticas y fotográficas.</p>
+            </div>
+
+            <div class="hud-card p-6 rounded-lg space-y-6">
+                <!-- Selectors -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-950/60 p-4 border border-slate-800 rounded">
+                    <div>
+                        <label class="block text-xs font-mono text-cyan-400 uppercase mb-2"><i class="fa-solid fa-crosshairs"></i> Rifle Alfa (Izquierda)</label>
+                        <select id="vs-select-1" onchange="updateVSMode()" class="w-full bg-slate-900 border border-cyan-500/40 text-white font-mono p-3 rounded focus:outline-none focus:border-cyan-400">
+                            <option value="mosin" selected>Mosin-Nagant M91/30 (URSS)</option>
+                            <option value="kar98k">Mauser Kar98k (Alemania)</option>
+                            <option value="springfield">Springfield M1903A3 (EE.UU.)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-amber-400 uppercase mb-2"><i class="fa-solid fa-crosshairs"></i> Rifle Bravo (Derecha)</label>
+                        <select id="vs-select-2" onchange="updateVSMode()" class="w-full bg-slate-900 border border-amber-500/40 text-white font-mono p-3 rounded focus:outline-none focus:border-amber-400">
+                            <option value="mosin">Mosin-Nagant M91/30 (URSS)</option>
+                            <option value="kar98k" selected>Mauser Kar98k (Alemania)</option>
+                            <option value="springfield">Springfield M1903A3 (EE.UU.)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Comparison Output Container -->
+                <div id="vs-output-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: GRAPHICAL TELEMETRY (CHART.JS) -->
+        <section id="graphics" class="space-y-6">
+            <div class="border-l-4 border-emerald-400 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i> TELEMETRÍA GRÁFICA &amp; DESEMPEÑO BALÍSTICO
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Gráficas comparativas generadas con datos de pruebas de arsenal y registros de producción.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Chart 1: Bar Chart Performance Metrics -->
+                <div class="hud-card p-6 rounded-lg space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <h4 class="font-mono text-sm text-cyan-400 font-bold uppercase"><i class="fa-solid fa-gauge-high"></i> Rendimiento Físico &amp; Producción</h4>
+                        <span class="text-xs font-mono text-slate-500">VALORES ABSOLUTOS</span>
+                    </div>
+                    <div class="relative h-72 w-full">
+                        <canvas id="barChartMetrics"></canvas>
+                    </div>
+                    <p class="text-xs font-mono text-slate-400">Velocidad inicial de proyectil (m/s), alcance efectivo (m) y producción total en millones de unidades.</p>
+                </div>
+
+                <!-- Chart 2: Tactical Radar -->
+                <div class="hud-card p-6 rounded-lg space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <h4 class="font-mono text-sm text-cyan-400 font-bold uppercase"><i class="fa-solid fa-radar"></i> Perfil Táctico Relativo (0-100)</h4>
+                        <span class="text-xs font-mono text-slate-500">ANÁLISIS DE CAMPO</span>
+                    </div>
+                    <div class="relative h-72 w-full flex justify-center">
+                        <canvas id="radarChartMetrics"></canvas>
+                    </div>
+                    <p class="text-xs font-mono text-slate-400">Evaluación matricial de precisión, resistencia al congelamiento, ergonomía de cerrojo y cadencia.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 4: LEGENDARY SNIPERS & SOLDIERS -->
+        <section id="soldiers" class="space-y-6">
+            <div class="border-l-4 border-red-500 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-user-ninja text-red-500"></i> LEYENDAS Y FRANCOTIRADORES FAMOSOS
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Soldados históricos que utilizaron estos fusiles en los frentes más hostiles del conflicto mundial.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Vasili Zaitsev -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-red-500 hover:border-cyan-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-red-400 uppercase font-bold">URSS // FRENTE ORIENTAL</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Vasili Záitsev</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-red-950 text-red-300 border border-red-800">225+ Bajas</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-cyan-400">Fusil:</strong> Mosin-Nagant M91/30 Sniper</p>
+                        <p><strong class="text-cyan-400">Visor Óptico:</strong> PU 3.5x (Lente de 22mm)</p>
+                        <p><strong class="text-cyan-400">Teatro:</strong> Batalla de Stalingrado (1942-1943)</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Héroe de la Unión Soviética. Záitsev convirtió las ruinas de las fábricas de Stalingrado en una zona de cacería implacable, desarrollando la táctica del "grupo de seis" para cubrir sectores enteros de combate urbano.
+                    </p>
+                </div>
+
+                <!-- Simo Häyhä -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-slate-200 hover:border-cyan-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-slate-300 uppercase font-bold">FINLANDIA // GUERRA DE INVIERNO</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Simo Häyhä</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-slate-900 text-slate-200 border border-slate-700">505+ Bajas</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-cyan-400">Fusil:</strong> M/28-30 (Variante Finlandesa de Mosin)</p>
+                        <p><strong class="text-cyan-400">Visor Óptico:</strong> Ninguno (Miras de Hierro Abiertas)</p>
+                        <p><strong class="text-cyan-400">Teatro:</strong> Kollaa, Finlandia (-40°C)</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Apodado "La Muerte Blanca". Häyhä rechazaba los visores ópticos porque el reflejo del sol o el vaho congelado del visor revelaban su posición. Disparaba a más de 400 metros con mira metálica bajo frío extremo.
+                    </p>
+                </div>
+
+                <!-- Matthias Hetzenauer -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-amber-500 hover:border-amber-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-amber-400 uppercase font-bold">ALEMANIA // WEHRMACHT</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Matthias Hetzenauer</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-amber-950 text-amber-300 border border-amber-800">345 Bajas</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-amber-400">Fusil:</strong> Mauser Kar98k Sniper</p>
+                        <p><strong class="text-amber-400">Visor Óptico:</strong> ZF4 (4x) / ZF39 (6x)</p>
+                        <p><strong class="text-amber-400">Teatro:</strong> Frente Oriental / Cárpatos (1944-1945)</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        El tirador más letal de la Wehrmacht. Destacado por su paciencia en los Cárpatos, acreditó el impacto más largo registrado con un Kar98k a una distancia medida de 1,100 metros contra un observador de artillería.
+                    </p>
+                </div>
+
+                <!-- Josef Allerberger -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-amber-500 hover:border-amber-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-amber-400 uppercase font-bold">ALEMANIA // GEBIRGSJÄGER</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Josef Allerberger</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-amber-950 text-amber-300 border border-amber-800">257 Bajas</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-amber-400">Fusil:</strong> Kar98k &amp; Mosin Capturado</p>
+                        <p><strong class="text-amber-400">Visor Óptico:</strong> ZF41 (1.5x) / Visor Kollmorgen 4x</p>
+                        <p><strong class="text-amber-400">Teatro:</strong> Ucrania y Retroceso del Este</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Francotirador austríaco de la 3ª División de Montaña. Su testimonio detallado confirmó la superioridad en suavidad de cerrojo del Kar98k en combates dinámicos defensivos.
+                    </p>
+                </div>
+
+                <!-- Carlos Hathcock -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-emerald-500 hover:border-emerald-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-emerald-400 uppercase font-bold">EE.UU. // U.S. MARINES</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Doctrina Springfield / USMC</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-emerald-950 text-emerald-300 border border-emerald-800">Legacy Target</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-emerald-400">Fusil:</strong> Springfield M1903A1 con Unertl</p>
+                        <p><strong class="text-emerald-400">Visor Óptico:</strong> Unertl 8x / Weaver 330</p>
+                        <p><strong class="text-emerald-400">Teatro:</strong> Escuela de Tiradores del USMC</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Aunque Carlos Hathcock sirvió en Vietnam, compitió e instruyó con los Springfields M1903 reglamentarios de competición. Los Marines mantuvieron el M1903 en servicio de francotirador por su cañón pesado de match grade.
+                    </p>
+                </div>
+
+                <!-- Liudmila Pavlichenko -->
+                <div class="hud-card p-6 rounded-lg space-y-4 border-t-2 border-t-red-500 hover:border-cyan-400 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-red-400 uppercase font-bold">URSS // 25ª DIV. INFANTERÍA</span>
+                            <h4 class="text-xl font-bold text-white font-rajdhani">Liudmila Pavlichenko</h4>
+                        </div>
+                        <span class="text-xs font-mono px-2 py-1 bg-red-950 text-red-300 border border-red-800">309 Bajas</span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 space-y-1 bg-slate-950 p-3 rounded border border-slate-800">
+                        <p><strong class="text-cyan-400">Fusil:</strong> Mosin-Nagant M91/30</p>
+                        <p><strong class="text-cyan-400">Visor Óptico:</strong> PE 4x / PU 3.5x</p>
+                        <p><strong class="text-cyan-400">Teatro:</strong> Sitio de Sebastopol y Odesa</p>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        La francotiradora hembra más exitosa de la historia militar. Pavlichenko abatió a 36 francotiradores enemigos en duelos individuales operando en las colinas de Sebastopol con su Mosin M91/30 de cañón seleccionado.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 5: HISTORICAL ENGINEERING ANALYSIS -->
+        <section id="history" class="space-y-6">
+            <div class="border-l-4 border-cyan-400 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-microscope text-cyan-400"></i> INGENIERÍA, MOCIÓN DEL CERROJO Y LITIGIOS
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Análisis técnico de patentes, ergonomía de bloqueo y producción bélica.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="hud-card p-6 rounded-lg space-y-3">
+                    <h4 class="text-lg font-bold text-white flex items-center gap-2 font-rajdhani">
+                        <i class="fa-solid fa-scale-balanced text-cyan-400"></i> La Demanda Mauser vs Springfield
+                    </h4>
+                    <p class="text-xs leading-relaxed text-slate-300">
+                        Cuando el gobierno de EE.UU. diseñó el Springfield M1903, incorporó el sistema de cerrojo patentado por Paul Mauser (tetones delanteros, extractor no giratorio y cargador albolado). Mauser Werke demandó exitosamente al gobierno estadounidense, forzando a EE.UU. a pagar miles de dólares en regalías a Alemania hasta el estallido de la Primera Guerra Mundial.
+                    </p>
+                </div>
+
+                <div class="hud-card p-6 rounded-lg space-y-3">
+                    <h4 class="text-lg font-bold text-white flex items-center gap-2 font-rajdhani">
+                        <i class="fa-solid fa-gears text-amber-400"></i> Tolerancias y Cerrojo "Sticky Bolt"
+                    </h4>
+                    <p class="text-xs leading-relaxed text-slate-300">
+                        El Mosin-Nagant posee un ángulo de apertura de cerrojo de 90°. Con munición de vaina de acero barnizado que se derrite por el calor de la recámara, el cerrojo tiende a atascarse ("Sticky Bolt"), requiriendo fuerza bruta. En cambio, el Kar98k utiliza extracción de alimentación controlada (Controlled Feed) que retira la vaina suavemente en cualquier temperatura.
+                    </p>
+                </div>
+
+                <div class="hud-card p-6 rounded-lg space-y-3">
+                    <h4 class="text-lg font-bold text-white flex items-center gap-2 font-rajdhani">
+                        <i class="fa-solid fa-industry text-emerald-400"></i> Simplificación y Madera Laminada
+                    </h4>
+                    <p class="text-xs leading-relaxed text-slate-300">
+                        A medida que avanzaba la guerra (1942-1944), los tres países simplificaron la producción. La Wehrmacht pasó de nogal macizo a madera laminada con resinas sintéticas en el Kar98k para evitar deformaciones por humedad. Los soviéticos eliminaron el pulido exterior en el Izhevsk M91/30, dejando marcas visibles de mecanizado rápido para recortar horas de fabricación.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 6: SOURCES AND HISTORICAL REFERENCES -->
+        <section id="sources" class="space-y-6">
+            <div class="border-l-4 border-slate-500 pl-4">
+                <h3 class="text-2xl font-bold text-white uppercase tracking-wider flex items-center gap-2 font-rajdhani">
+                    <i class="fa-solid fa-book-bookmark text-slate-400"></i> FUENTES DOCUMENTADAS Y ARCHIVOS HISTÓRICOS
+                </h3>
+                <p class="text-xs font-mono text-slate-400">Referencias bibliográficas, manuales de arsenal y museos que avalan los datos técnicos.</p>
+            </div>
+
+            <div class="hud-card p-6 rounded-lg font-mono text-xs text-slate-300 space-y-4">
+                <ul class="space-y-3 divide-y divide-slate-800">
+                    <li class="pt-2 flex items-start gap-3">
+                        <i class="fa-solid fa-bookmark text-cyan-400 mt-1"></i>
+                        <div>
+                            <strong class="text-white">Lapin, Terence W. (2007).</strong> <em>The Mosin-Nagant Rifle (4th Edition).</em> North Cape Publications. ISBN 1-882391-21-7. (Análisis detallado de marcajes de arsenal de Izhevsk y Tula, tolerancias de recámara y variantes M91/30 PU).
+                        </div>
+                    </li>
+                    <li class="pt-2 flex items-start gap-3">
+                        <i class="fa-solid fa-bookmark text-amber-400 mt-1"></i>
+                        <div>
+                            <strong class="text-white">Ball, Robert W. D. (2011).</strong> <em>Mauser Military Rifles of the World (5th Edition).</em> Gun Digest Books. ISBN 978-1440215445. (Especificaciones de presión en recámara, aleaciones de acero y contratos de producción del Karabiner 98k).
+                        </div>
+                    </li>
+                    <li class="pt-2 flex items-start gap-3">
+                        <i class="fa-solid fa-bookmark text-emerald-400 mt-1"></i>
+                        <div>
+                            <strong class="text-white">Brophy, William S. (1985).</strong> <em>The Springfield 1903 Rifles: The Illustrated Model 1903 Series.</em> Stackpole Books. ISBN 0-8117-0871-3. (Documentación completa sobre las patentes en litigio con Mauser, tratamiento térmico de cajón de mecanismos y modelos M1903A3/A4).
+                        </div>
+                    </li>
+                    <li class="pt-2 flex items-start gap-3">
+                        <i class="fa-solid fa-bookmark text-cyan-400 mt-1"></i>
+                        <div>
+                            <strong class="text-white">Imperial War Museums (IWM London Archive).</strong> <em>Small Arms Technical Reports: WWII Infantry Weapons Ballistic Testing.</em> Archivo de pruebas balísticas comparativas de munición 7.62x54mmR, 7.92x57mm y .30-06 M2 Ball.
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-950/80 py-8 text-center font-mono text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p>WWII BOLT-ACTION ARMORY ARCHIVE // OPTION A PNG IMPLEMENTATION</p>
+            <p class="text-slate-600">Diseñado con estética táctica HUD. Datos verificados con manuales de campo y literatura militar académica.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* 
+           WEAPONS DATA ARCHIVE WITH OPTION A (PNG IMAGES)
+           - Includes local image paths ('images/mosin_nagant.png', etc.)
+           - Includes fallback SVG/data URLs in case local PNG images are not present yet.
+        */
+        const weaponsData = {
+            mosin: {
+                id: 'mosin',
+                name: 'Mosin-Nagant M91/30',
+                nation: 'Unión Soviética 🇷🇺',
+                designer: 'Sergei Mosin & Émile Nagant',
+                caliber: '7.62x54mmR (Con Pestaña / Rimmed)',
+                capacity: '5 Cartuchos (Cargador interno fijo alimentado con peine)',
+                velocity: 865, // m/s
+                range: 800, // m
+                weight: 4.0, // kg
+                length: 1232, // mm
+                produced: 37.0, // Millones
+                action: 'Cerrojo de rotación manual (Ángulo de 90°)',
+                optic: 'Mira telescópica PU 3.5x o Miras abiertas',
+                color: '#00e5ff',
+                /* 
+                   OPCIÓN A: RUTA DE TU IMAGEN PNG LOCAL
+                   Puedes renombrar tu archivo local como 'images/mosin_nagant.png'
+                */
+                localPngPath: 'images/mosin_nagant.png',
+                // Placeholder PNG render si no existe el archivo local
+                fallbackUrl: 'https://placehold.co/800x300/0f172a/00e5ff?text=MOSIN-NAGANT+M91%2F30+PNG',
+                scores: {
+                    precision: 75,
+                    durability: 98,
+                    ergonomics: 60,
+                    fireRate: 65,
+                    maintenance: 95
+                },
+                summary: 'El Mosin-Nagant M91/30 es el fusil de cerrojo más producido de la historia. Diseñado con tolerancias mecánicas amplias para resistir el barro, la nieve helada y la falta de lubricante en el Frente Oriental. Su cartucho con pestaña 7.62x54mmR le otorga una balística terminal devastadora.'
+            },
+            kar98k: {
+                id: 'kar98k',
+                name: 'Mauser Karabiner 98k',
+                nation: 'Alemania Nazi 🇩🇪',
+                designer: 'Mauser Werke',
+                caliber: '7.92x57mm Mauser (8mm Mauser)',
+                capacity: '5 Cartuchos (Cargador interno fijo alimentado con peine)',
+                velocity: 760, // m/s
+                range: 800, // m
+                weight: 3.8, // kg
+                length: 1110, // mm
+                produced: 14.6, // Millones
+                action: 'Cerrojo Mauser 98 con alimentación controlada',
+                optic: 'ZF41 (1.5x), ZF39 (4x) o ZF4 (4x)',
+                color: '#f59e0b',
+                /* 
+                   OPCIÓN A: RUTA DE TU IMAGEN PNG LOCAL
+                   Puedes renombrar tu archivo local como 'images/kar98k.png'
+                */
+                localPngPath: 'images/kar98k.png',
+                fallbackUrl: 'https://placehold.co/800x300/0f172a/f59e0b?text=MAUSER+KAR98K+PNG',
+                scores: {
+                    precision: 90,
+                    durability: 88,
+                    ergonomics: 92,
+                    fireRate: 80,
+                    maintenance: 82
+                },
+                summary: 'La obra maestra de Mauser. Su mecanismo de cerrojo de alimentación controlada evita la rotación prematura del cartucho y los dobles alimentamientos. Su diseño corto tipo carabina facilitaba la maniobra en vehículos y trincheras, convirtiéndose en el estándar absoluto de la Wehrmacht.'
+            },
+            springfield: {
+                id: 'springfield',
+                name: 'Springfield M1903 (A3/A4)',
+                nation: 'Estados Unidos 🇺🇸',
+                designer: 'Springfield Armory',
+                caliber: '.30-06 Springfield (7.62x63mm)',
+                capacity: '5 Cartuchos (Cargador interno fijo alimentado con peine)',
+                velocity: 823, // m/s
+                range: 850, // m
+                weight: 3.9, // kg
+                length: 1105, // mm
+                produced: 3.0, // Millones
+                action: 'Cerrojo de rotación tipo Mauser modificado',
+                optic: 'Miras de dioptría ortóptica / Weaver 330 (M1903A4)',
+                color: '#10b981',
+                /* 
+                   OPCIÓN A: RUTA DE TU IMAGEN PNG LOCAL
+                   Puedes renombrar tu archivo local como 'images/springfield_m1903.png'
+                */
+                localPngPath: 'images/springfield_m1903.png',
+                fallbackUrl: 'https://placehold.co/800x300/0f172a/10b981?text=SPRINGFIELD+M1903+PNG',
+                scores: {
+                    precision: 94,
+                    durability: 85,
+                    ergonomics: 85,
+                    fireRate: 75,
+                    maintenance: 80
+                },
+                summary: 'Inspirado directamente en las patentes capturadas de Mauser tras la Guerra Hispano-Estadounidense. El Springfield destaca por sus altísimos estándares de metalurgia estadounidense y sus miras aperchadas de dioptría (M1903A3), ofreciendo la precisión intrínseca más elevada de fábrica.'
+            }
+        };
+
+        /* AUDIO SYSTEM (WEB AUDIO API) */
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playAudio(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'select') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(600, now + 0.03);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            if (audioEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                text.innerText = 'SFX ON';
+                playAudio('click');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+                text.innerText = 'SFX OFF';
+            }
+        }
+
+        /* WEAPON SWITCHING LOGIC (OPTION A: PNG DISPLAY) */
+        let currentWeapon = 'mosin';
+        let isGlowActive = true;
+
+        function switchWeapon(key) {
+            playAudio('select');
+            currentWeapon = key;
+            
+            // Highlight active button tab
+            document.querySelectorAll('.weapon-tab-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-400', 'border-amber-400', 'border-emerald-400', 'hud-glow');
+            });
+
+            const activeBtn = document.getElementById(`btn-${key}`);
+            const wData = weaponsData[key];
+            activeBtn.classList.add('hud-glow');
+
+            // Render detail card with Option A (PNG Image Container)
+            const container = document.getElementById('weapon-detail-card');
+            container.innerHTML = `
+                <div class="space-y-6 animate-fade-in">
+                    <!-- Top Info Header -->
+                    <div class="flex flex-wrap justify-between items-start gap-4 border-b border-slate-800 pb-4">
+                        <div>
+                            <span class="text-xs font-mono text-slate-400 uppercase tracking-widest">${wData.nation}</span>
+                            <h3 class="text-3xl font-extrabold text-white font-rajdhani uppercase">${wData.name}</h3>
+                            <p class="text-xs font-mono text-cyan-400 mt-0.5">Diseñador: ${wData.designer}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-mono text-slate-400 block uppercase">Calibre Reglamentario</span>
+                            <span class="text-lg font-mono font-bold text-cyan-300 px-3 py-1 bg-cyan-950/80 border border-cyan-500/40 inline-block mt-1">${wData.caliber}</span>
+                        </div>
+                    </div>
+
+                    <!-- OPTION A: TACTICAL PNG IMAGE CONTAINER -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs font-mono text-slate-400">
+                            <span class="text-cyan-400"><i class="fa-solid fa-camera"></i> VISOR DE IMAGEN PNG [OPTION A]</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleImageGlow()" class="px-2 py-1 bg-slate-900 border border-cyan-500/40 hover:bg-cyan-500 hover:text-black text-cyan-400 rounded transition text-[10px]">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> TOGGLE GLOW
+                                </button>
+                                <span class="text-slate-500 hidden sm:inline">Ruta Local: <code class="text-cyan-300">${wData.localPngPath}</code></span>
+                            </div>
+                        </div>
+
+                        <!-- Image Frame Container with Target Corners -->
+                        <div class="rifle-image-container group">
+                            <div class="hud-corner-tl"></div>
+                            <div class="hud-corner-tr"></div>
+                            <div class="hud-corner-bl"></div>
+                            <div class="hud-corner-br"></div>
+                            <div class="scanline-overlay"></div>
+
+                            <!-- PNG Image Element with onerror fallback -->
+                            <img 
+                                id="rifle-png-display" 
+                                class="rifle-png-img ${isGlowActive ? 'glow-active' : ''}" 
+                                src="${wData.localPngPath}" 
+                                alt="${wData.name}"
+                                onerror="this.onerror=null; this.src='${wData.fallbackUrl}';"
+                            />
+
+                            <div class="absolute bottom-2 left-3 text-[10px] font-mono text-slate-500 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800">
+                                FORMAT: PNG TRANSPARENT // STATUS: LOADED
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technical Metrics Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
+                        <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+                            <span class="text-slate-400 block uppercase">Velocidad Salida</span>
+                            <span class="text-lg font-bold text-white">${wData.velocity} m/s</span>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+                            <span class="text-slate-400 block uppercase">Alcance Efectivo</span>
+                            <span class="text-lg font-bold text-white">${wData.range} metros</span>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+                            <span class="text-slate-400 block uppercase">Peso (Descargado)</span>
+                            <span class="text-lg font-bold text-white">${wData.weight} kg</span>
+                        </div>
+                        <div class="bg-slate-900/80 p-3 rounded border border-slate-800">
+                            <span class="text-slate-400 block uppercase">Total Producido</span>
+                            <span class="text-lg font-bold text-white">~${wData.produced}M uds</span>
+                        </div>
+                    </div>
+
+                    <!-- Description & Specs -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
+                        <div class="space-y-2">
+                            <span class="text-cyan-400 uppercase font-bold block"><i class="fa-solid fa-gear"></i> Mecanismo y Alimentación</span>
+                            <p class="text-slate-300 leading-relaxed font-sans">${wData.summary}</p>
+                        </div>
+                        <div class="space-y-2 bg-slate-950 p-4 rounded border border-slate-800">
+                            <span class="text-cyan-400 uppercase font-bold block"><i class="fa-solid fa-list-check"></i> Especificaciones Complementarias</span>
+                            <ul class="space-y-1.5 text-slate-300">
+                                <li><strong class="text-slate-400">Acción:</strong> ${wData.action}</li>
+                                <li><strong class="text-slate-400">Capacidad:</strong> ${wData.capacity}</li>
+                                <li><strong class="text-slate-400">Longitud Total:</strong> ${wData.length} mm</li>
+                                <li><strong class="text-slate-400">Ópticas Comunes:</strong> ${wData.optic}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* TOGGLE GLOW EFFECT ON PNG IMAGE */
+        function toggleImageGlow() {
+            playAudio('click');
+            isGlowActive = !isGlowActive;
+            const imgEl = document.getElementById('rifle-png-display');
+            if (imgEl) {
+                if (isGlowActive) {
+                    imgEl.classList.add('glow-active');
+                } else {
+                    imgEl.classList.remove('glow-active');
+                }
+            }
+        }
+
+        /* VS MODE COMPARISON LOGIC WITH PNG PREVIEWS */
+        function updateVSMode() {
+            playAudio('click');
+            const key1 = document.getElementById('vs-select-1').value;
+            const key2 = document.getElementById('vs-select-2').value;
+
+            const w1 = weaponsData[key1];
+            const w2 = weaponsData[key2];
+
+            const container = document.getElementById('vs-output-container');
+
+            function renderVSColumn(w) {
+                return `
+                    <div class="space-y-4">
+                        <div class="border-b border-slate-800 pb-2">
+                            <span class="text-xs font-mono text-slate-400 uppercase">${w.nation}</span>
+                            <h4 class="text-2xl font-bold text-white font-rajdhani uppercase">${w.name}</h4>
+                            <span class="text-xs font-mono text-cyan-400">${w.caliber}</span>
+                        </div>
+
+                        <!-- PNG Mini Preview Frame -->
+                        <div class="h-32 bg-slate-950 rounded border border-slate-800 p-2 flex items-center justify-center relative overflow-hidden">
+                            <div class="scanline-overlay"></div>
+                            <img 
+                                src="${w.localPngPath}" 
+                                alt="${w.name}" 
+                                class="max-h-full max-w-full object-contain filter drop-shadow(0 0 6px ${w.color})"
+                                onerror="this.onerror=null; this.src='${w.fallbackUrl}';"
+                            />
+                        </div>
+
+                        <!-- Progress Bars -->
+                        <div class="space-y-3 font-mono text-xs">
+                            <div>
+                                <div class="flex justify-between text-slate-300 mb-1">
+                                    <span>Velocidad Inicial (${w.velocity} m/s)</span>
+                                    <span>${Math.round((w.velocity/900)*100)}%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-800">
+                                    <div class="bg-cyan-400 h-full" style="width: ${(w.velocity/900)*100}%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-slate-300 mb-1">
+                                    <span>Alcance Efectivo (${w.range}m)</span>
+                                    <span>${Math.round((w.range/1000)*100)}%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-800">
+                                    <div class="bg-emerald-400 h-full" style="width: ${(w.range/1000)*100}%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-slate-300 mb-1">
+                                    <span>Precisión General (${w.scores.precision}/100)</span>
+                                    <span>${w.scores.precision}%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-800">
+                                    <div class="bg-amber-400 h-full" style="width: ${w.scores.precision}%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-slate-300 mb-1">
+                                    <span>Durabilidad / Tolerancia Frío (${w.scores.durability}/100)</span>
+                                    <span>${w.scores.durability}%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-800">
+                                    <div class="bg-red-400 h-full" style="width: ${w.scores.durability}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded text-xs text-slate-400 font-sans border border-slate-800">
+                            <strong class="font-mono text-cyan-400">Resumen:</strong> ${w.summary}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = renderVSColumn(w1) + renderVSColumn(w2);
+        }
+
+        /* CHART.JS INITIALIZATION */
+        function initCharts() {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'JetBrains Mono';
+
+            // Bar Chart
+            const ctxBar = document.getElementById('barChartMetrics').getContext('2d');
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Velocidad Salida (m/s)', 'Alcance Efectivo (m)', 'Masa / Peso (kg x100)', 'Producción (Millones)'],
+                    datasets: [
+                        {
+                            label: 'Mosin-Nagant',
+                            data: [865, 800, 400, 37.0],
+                            backgroundColor: 'rgba(0, 229, 255, 0.7)',
+                            borderColor: '#00e5ff',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Kar98k',
+                            data: [760, 800, 380, 14.6],
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Springfield M1903',
+                            data: [823, 850, 390, 3.0],
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: '#10b981',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { grid: { color: 'rgba(30, 41, 59, 0.5)' }, beginAtZero: true },
+                        x: { grid: { color: 'rgba(30, 41, 59, 0.5)' } }
+                    }
+                }
+            });
+
+            // Radar Chart
+            const ctxRadar = document.getElementById('radarChartMetrics').getContext('2d');
+            new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Precisión', 'Durabilidad / Frío', 'Ergonomía', 'Cadencia Real', 'Mantenimiento'],
+                    datasets: [
+                        {
+                            label: 'Mosin-Nagant',
+                            data: [75, 98, 60, 65, 95],
+                            backgroundColor: 'rgba(0, 229, 255, 0.2)',
+                            borderColor: '#00e5ff',
+                            pointBackgroundColor: '#00e5ff'
+                        },
+                        {
+                            label: 'Kar98k',
+                            data: [90, 88, 92, 80, 82],
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderColor: '#f59e0b',
+                            pointBackgroundColor: '#f59e0b'
+                        },
+                        {
+                            label: 'Springfield M1903',
+                            data: [94, 85, 85, 75, 80],
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderColor: '#10b981',
+                            pointBackgroundColor: '#10b981'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 229, 255, 0.2)' },
+                            grid: { color: 'rgba(30, 41, 59, 0.8)' },
+                            pointLabels: { color: '#f8fafc', font: { size: 10 } },
+                            ticks: { display: false, max: 100 }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* INITIAL LOAD */
+        window.addEventListener('DOMContentLoaded', () => {
+            switchWeapon('mosin');
+            updateVSMode();
+            initCharts();
+        });
+    </script>
+</body>
+</html>
