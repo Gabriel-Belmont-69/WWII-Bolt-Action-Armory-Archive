@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WWII AXIS SIDEARM DATABASE // LUGER vs C96 vs P38</title>
+    <!-- Google Fonts & Chart.js -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #060b11;
+            --bg-card: rgba(10, 20, 32, 0.75);
+            --border-hud: rgba(0, 229, 255, 0.25);
+            --hud-glow: rgba(0, 229, 255, 0.15);
+            --accent-cyan: #00e5ff;
+            --accent-blue: #1e88e5;
+            --accent-amber: #ffb300;
+            --text-main: #e0f2fe;
+            --text-dim: #78909c;
+            --text-gold: #ffd54f;
+            --font-title: 'Orbitron', sans-serif;
+            --font-hud: 'Share Tech Mono', monospace;
+            --font-body: 'Rajdhani', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 60%),
+                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 60px;
+        }
+
+        /* HUD Header */
+        header {
+            background: linear-gradient(180deg, rgba(6, 11, 17, 0.95) 0%, rgba(10, 20, 32, 0.8) 100%);
+            border-bottom: 2px solid var(--accent-cyan);
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+
+        .logo-group h1 {
+            font-family: var(--font-title);
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .logo-group span {
+            font-family: var(--font-hud);
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        nav {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid var(--border-hud);
+            color: var(--text-dim);
+            padding: 8px 16px;
+            font-family: var(--font-hud);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: var(--accent-cyan);
+            color: #fff;
+            box-shadow: 0 0 15px var(--hud-glow);
+        }
+
+        .sfx-toggle {
+            background: transparent;
+            border: 1px solid var(--accent-amber);
+            color: var(--accent-amber);
+            padding: 6px 12px;
+            font-family: var(--font-hud);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-pane {
+            display: none;
+        }
+
+        .section-pane.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Selector de Armas */
+        .weapon-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .selector-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hud);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+
+        .selector-card:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 229, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .selector-card.selected {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(10, 20, 32, 0.9) 100%);
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .selector-card.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-cyan);
+        }
+
+        .card-tag {
+            font-family: var(--font-hud);
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            font-family: var(--font-title);
+            font-size: 1.3rem;
+            color: #fff;
+            margin: 5px 0;
+        }
+
+        .card-sub {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        /* Display Principal de Armas */
+        .weapon-display {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hud);
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Marco de Imagen PNG */
+        .image-frame {
+            background: radial-gradient(circle at center, rgba(0, 229, 255, 0.08) 0%, rgba(6, 11, 17, 0.8) 80%);
+            border: 1px solid var(--border-hud);
+            height: 340px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .image-frame img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.35));
+            transition: transform 0.3s ease;
+        }
+
+        .image-frame img:hover {
+            transform: scale(1.05);
+        }
+
+        .png-fallback-msg {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-family: var(--font-hud);
+            font-size: 0.75rem;
+            color: var(--accent-amber);
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-left: 2px solid var(--accent-amber);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .stat-label {
+            font-family: var(--font-hud);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .stat-value {
+            font-family: var(--font-title);
+            font-size: 1.2rem;
+            color: var(--text-gold);
+            margin-top: 4px;
+        }
+
+        /* Personajes / Figuras Famosas */
+        .figures-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .figure-card {
+            background: rgba(6, 11, 17, 0.8);
+            border: 1px solid var(--border-hud);
+            padding: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .figure-avatar {
+            width: 70px;
+            height: 70px;
+            background: #102030;
+            border: 1px solid var(--accent-cyan);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-title);
+            color: var(--accent-cyan);
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .figure-info h4 {
+            font-family: var(--font-title);
+            color: var(--text-gold);
+            font-size: 1.1rem;
+        }
+
+        .figure-info p {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+
+        /* Gráficos */
+        .chart-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hud);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box h3 {
+            font-family: var(--font-title);
+            color: var(--accent-cyan);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        /* Tabla Versus */
+        .vs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            font-size: 0.95rem;
+        }
+
+        .vs-table th, .vs-table td {
+            border: 1px solid var(--border-hud);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .vs-table th {
+            background: rgba(0, 229, 255, 0.1);
+            font-family: var(--font-title);
+            color: var(--accent-cyan);
+            font-size: 0.9rem;
+        }
+
+        .vs-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Fuentes */
+        .sources-list {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hud);
+            padding: 25px;
+            list-style-type: none;
+        }
+
+        .sources-list li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed rgba(0, 229, 255, 0.15);
+        }
+
+        .sources-list li a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-family: var(--font-hud);
+        }
+
+        .sources-list li a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            .weapon-selector, .weapon-display, .figures-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-group">
+            <h1>SIDEARM ARCHIVE // WWII</h1>
+            <span>AXIS & ALLIED PISTOL EVALUATION SYSTEM</span>
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="switchPane('weapons')">ARMAS</button>
+            <button class="nav-btn" onclick="switchPane('vs')">MODO VS</button>
+            <button class="nav-btn" onclick="switchPane('charts')">GRÁFICAS</button>
+            <button class="nav-btn" onclick="switchPane('sources')">FUENTES</button>
+            <button class="sfx-toggle" id="sfx-btn" onclick="toggleSFX()">🔊 SFX: ON</button>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <!-- SECCIÓN ARMAS -->
+        <div id="pane-weapons" class="section-pane active">
+            
+            <div class="weapon-selector">
+                <div class="selector-card selected" id="card-luger" onclick="selectWeapon('luger')">
+                    <div class="card-tag">ALEMANIA // 1900</div>
+                    <div class="card-title">Luger P08</div>
+                    <div class="card-sub">Cierre de Rodillera / Iconic Design</div>
+                </div>
+
+                <div class="selector-card" id="card-c96" onclick="selectWeapon('c96')">
+                    <div class="card-tag">ALEMANIA // 1896</div>
+                    <div class="card-title">Mauser C96</div>
+                    <div class="card-sub">"Broomhandle" / Alta Velocidad</div>
+                </div>
+
+                <div class="selector-card" id="card-p38" onclick="selectWeapon('p38')">
+                    <div class="card-tag">ALEMANIA // 1938</div>
+                    <div class="card-title">Walther P38</div>
+                    <div class="card-sub">Doble Acción / Estándar de la Wehrmacht</div>
+                </div>
+            </div>
+
+            <!-- Main Display -->
+            <div class="weapon-display">
+                <div>
+                    <div class="image-frame">
+                        <img id="weapon-img" src="images/luger_p08.png" alt="Pistola WWII" onerror="handleImageError(this)">
+                        <div class="png-fallback-msg" id="png-note">Ruta local: images/luger_p08.png</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">CALIBRE</div>
+                            <div class="stat-value" id="stat-calibre">9x19mm Parabellum</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">VELOCIDAD SALIDA</div>
+                            <div class="stat-value" id="stat-velocity">375 m/s</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">CAPACIDAD</div>
+                            <div class="stat-value" id="stat-capacity">8 cartuchos</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">SISTEMA ACCIÓN</div>
+                            <div class="stat-value" id="stat-action">Rodillera (Toggle-Lock)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 id="weapon-title" style="font-family: var(--font-title); color: #fff; font-size: 1.8rem; border-bottom: 2px solid var(--accent-cyan); padding-bottom: 8px;">Luger P08</h2>
+                    <p id="weapon-desc" style="margin-top: 15px; font-size: 1.05rem; line-height: 1.5; color: var(--text-main);">
+                        Diseñada por Georg Luger en 1898, la Pistole 08 es una de las armas cortas más reconocibles de la historia militar. Destacó por su ergonomía única y su distintivo cerrojo articulado de rodillera.
+                    </p>
+
+                    <h3 style="font-family: var(--font-title); color: var(--accent-amber); font-size: 1.1rem; margin-top: 25px;">FIGURAS Y USUARIOS DESTACADOS</h3>
+                    <div class="figures-grid" id="figures-container">
+                        <!-- Cargado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECCIÓN MODO VS -->
+        <div id="pane-vs" class="section-pane">
+            <h2 style="font-family: var(--font-title); color: var(--accent-cyan); margin-bottom: 20px;">MATRIZ COMPARATIVA DIRECTA</h2>
+            <table class="vs-table">
+                <thead>
+                    <tr>
+                        <th>CARACTERÍSTICA</th>
+                        <th>LUGER P08</th>
+                        <th>MAUSER C96</th>
+                        <th>WALTHER P38</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Año de Entrada</strong></td>
+                        <td>1908 (Reichswehr)</td>
+                        <td>1896</td>
+                        <td>1939 (Wehrmacht)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mecanismo de Disparo</strong></td>
+                        <td>Acción simple con cerrojo de rodillera</td>
+                        <td>Acción simple con martillo expuesto</td>
+                        <td>Doble acción / Acción simple (DA/SA)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seguridad / Fiabilidad</strong></td>
+                        <td>Sensible a la suciedad y tierra del frente</td>
+                        <td>Mecanismo complejo sin tornillos; fiable si limpia</td>
+                        <td>Seguro desamartillador (Decocker) revolucionario</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Producción Total</strong></td>
+                        <td>~3.5 Millones</td>
+                        <td>~1.1 Millones</td>
+                        <td>~1.2 Millones (durante la guerra)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Costo de Fabricación</strong></td>
+                        <td>Muy alto (mecanizado manual complejo)</td>
+                        <td>Muy alto (requería aceros especiales)</td>
+                        <td>Moderado (diseñada para producción masiva)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECCIÓN GRÁFICAS -->
+        <div id="pane-charts" class="section-pane">
+            <div class="chart-box">
+                <h3>VELOCIDAD INICIAL DEL PROYECTIL (m/s)</h3>
+                <canvas id="chart-velocity" height="100"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>PESO DESCARGADO (GRAMOS)</h3>
+                <canvas id="chart-weight" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- SECCIÓN FUENTES -->
+        <div id="pane-sources" class="section-pane">
+            <h2 style="font-family: var(--font-title); color: var(--accent-cyan); margin-bottom: 20px;">FUENTES Y REGISTROS HISTÓRICOS</h2>
+            <ul class="sources-list">
+                <li>
+                    <strong>Imperial War Museums (IWM):</strong> Registro e historia técnica de las pistolas Luger P08 y Walther P38 en el servicio alemán.
+                    <br><a href="https://www.iwm.org.uk/" target="_blank">www.iwm.org.uk</a>
+                </li>
+                <li>
+                    <strong>NRA Museum National Firearms Collection:</strong> Análisis técnico del mecanismo Mauser C96 y su adopción previa a la WWI.
+                    <br><a href="https://www.nramuseum.org/" target="_blank">www.nramuseum.org</a>
+                </li>
+                <li>
+                    <strong>"German Handguns" - Ian Hogg (Greenhill Books):</strong> Documentación sobre volumen de producción y uso por oficiales en la WWII.
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // Audio Synthesizer para SFX tipo HUD
+        let sfxEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq, type = 'sine', duration = 0.08) {
+            if (!sfxEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function toggleSFX() {
+            sfxEnabled = !sfxEnabled;
+            document.getElementById('sfx-btn').innerText = sfxEnabled ? "🔊 SFX: ON" : "🔇 SFX: OFF";
+        }
+
+        // Base de Datos de Pistolas
+        const weaponsData = {
+            luger: {
+                title: "Luger P08 (Pistole 08)",
+                calibre: "9x19mm Parabellum",
+                velocity: "375 m/s",
+                capacity: "8 cartuchos (cargador monohilera)",
+                action: "Rodillera (Toggle-Lock)",
+                image: "images/luger_p08.png",
+                desc: "Diseñada por Georg Luger y adoptada formalmente en 1908. Famosa por su agarre ergonómico a 55 grados y su refinado mecanismo. Aunque precisa, sus estrechas tolerancias mecánicas la hacían vulnerable al polvo y lodo del frente.",
+                figures: [
+                    {
+                        initials: "MvR",
+                        name: "Manfred von Richthofen ('El Barón Rojo')",
+                        role: "As de la Aviación (WWI)",
+                        desc: "Portaba habitualmente una Luger P08 como arma personal en la cabina de su triplano Fokker Dr.I."
+                    },
+                    {
+                        initials: "EH",
+                        name: "Erich Hartmann",
+                        role: "Mayor de la Luftwaffe (352 Victorias)",
+                        desc: "El as de caza más exitoso de la historia llevaba una Luger P08 durante sus misiones en el Frente Oriental."
+                    }
+                ]
+            },
+            c96: {
+                title: "Mauser C96 ('Broomhandle')",
+                calibre: "7.63x25mm Mauser",
+                velocity: "425 m/s",
+                capacity: "10 cartuchos (Cargado con peine)",
+                action: "Retroceso corto con martillo",
+                image: "images/mauser_c96.png",
+                desc: "Introducida en 1896, destacaba por su cargador interno frente al gatillo, su empuñadura en forma de mango de escoba y la capacidad de acoplar su funda de madera como culatín para disparar a larga distancia.",
+                figures: [
+                    {
+                        initials: "WC",
+                        name: "Winston Churchill",
+                        role: "Primer Ministro Británico",
+                        desc: "Compró y utilizó una Mauser C96 durante la Batalla de Omdurmán (1898) y la Segunda Guerra Bóer, atribuyéndole haberle salvado la vida."
+                    },
+                    {
+                        initials: "TE",
+                        name: "T.E. Lawrence ('Lawrence de Arabia')",
+                        role: "Oficial y Diplomático Británico",
+                        desc: "Llevaba una C96 durante la Rebelión Árabe debido a su excelente alcance y penetración en espacios abiertos."
+                    }
+                ]
+            },
+            p38: {
+                title: "Walther P38",
+                calibre: "9x19mm Parabellum",
+                velocity: "365 m/s",
+                capacity: "8 cartuchos (cargador monohilera)",
+                action: "Doble Acción / Corto Retroceso",
+                image: "images/walther_p38.png",
+                desc: "La pistola que reemplazó a la Luger como estándar de la Wehrmacht. Introdujo el disparo en doble acción y palanca desamartilladora (decocker), sirviendo de base directa para diseños modernos como la Beretta 92.",
+                figures: [
+                    {
+                        initials: "ER",
+                        name: "Erwin Rommel ('El Zorro del Desierto')",
+                        role: "Mariscal de Campo",
+                        desc: "Utilizada ampliamente por los oficiales del Afrika Korps como arma reglamentaria fiable bajo el polvo del desierto."
+                    },
+                    {
+                        initials: "HP",
+                        name: "Helmut Weidling",
+                        role: "Comandante de la Defensa de Berlín",
+                        desc: "Oficiales de alto rango de la Wehrmacht prefirieron la P38 en la fase final de la guerra por su fiabilidad en combate urbano."
+                    }
+                ]
+            }
+        };
+
+        function selectWeapon(key) {
+            playSound(600);
+            
+            // UI Cards Update
+            document.querySelectorAll('.selector-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`card-${key}`).classList.add('selected');
+
+            const data = weaponsData[key];
+            
+            // Text Updates
+            document.getElementById('weapon-title').innerText = data.title;
+            document.getElementById('weapon-desc').innerText = data.desc;
+            document.getElementById('stat-calibre').innerText = data.calibre;
+            document.getElementById('stat-velocity').innerText = data.velocity;
+            document.getElementById('stat-capacity').innerText = data.capacity;
+            document.getElementById('stat-action').innerText = data.action;
+
+            // Image Update
+            const imgEl = document.getElementById('weapon-img');
+            imgEl.src = data.image;
+            document.getElementById('png-note').innerText = `Ruta local: ${data.image}`;
+
+            // Figures Update
+            const figContainer = document.getElementById('figures-container');
+            figContainer.innerHTML = '';
+            data.figures.forEach(f => {
+                figContainer.innerHTML += `
+                    <div class="figure-card">
+                        <div class="figure-avatar">${f.initials}</div>
+                        <div class="figure-info">
+                            <h4>${f.name}</h4>
+                            <p><strong>${f.role}</strong> - ${f.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function handleImageError(img) {
+            // Muestra mensaje de contingencia si no está el PNG local
+            img.style.display = 'none';
+            img.parentElement.style.border = '1px dashed var(--accent-amber)';
+            const note = document.getElementById('png-note');
+            note.style.color = '#ff5252';
+            note.innerText = '⚠️ Imagen no encontrada en /images. Coloca el archivo PNG correspondiente.';
+        }
+
+        function switchPane(paneId) {
+            playSound(450);
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.section-pane').forEach(p => p.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`pane-${paneId}`).classList.add('active');
+
+            if(paneId === 'charts') {
+                renderCharts();
+            }
+        }
+
+        // Renderizado de Gráficos Chart.js
+        let velocityChart, weightChart;
+
+        function renderCharts() {
+            if(velocityChart) return; // Evita duplicar render
+
+            const ctxV = document.getElementById('chart-velocity').getContext('2d');
+            velocityChart = new Chart(ctxV, {
+                type: 'bar',
+                data: {
+                    labels: ['Luger P08', 'Mauser C96', 'Walther P38'],
+                    datasets: [{
+                        label: 'Velocidad de Salida (m/s)',
+                        data: [375, 425, 365],
+                        backgroundColor: ['rgba(0, 229, 255, 0.6)', 'rgba(255, 179, 0, 0.6)', 'rgba(30, 136, 229, 0.6)'],
+                        borderColor: ['#00e5ff', '#ffb300', '#1e88e5'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } } }
+                }
+            });
+
+            const ctxW = document.getElementById('chart-weight').getContext('2d');
+            weightChart = new Chart(ctxW, {
+                type: 'bar',
+                data: {
+                    labels: ['Luger P08', 'Mauser C96', 'Walther P38'],
+                    datasets: [{
+                        label: 'Peso Descargado (Gramos)',
+                        data: [870, 1130, 800],
+                        backgroundColor: ['rgba(0, 229, 255, 0.6)', 'rgba(255, 179, 0, 0.6)', 'rgba(30, 136, 229, 0.6)'],
+                        borderColor: ['#00e5ff', '#ffb300', '#1e88e5'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } } }
+                }
+            });
+        }
+
+        // Init
+        window.onload = () => {
+            selectWeapon('luger');
+        };
+    </script>
+</body>
+</html>
